@@ -1,0 +1,20 @@
+[Unit]
+Description=demo app
+
+[Service]
+User=core
+EnvironmentFile=/etc/environment
+ExecStartPre=-/usr/bin/docker kill %p-%i
+ExecStartPre=-/usr/bin/docker rm %p-%i
+ExecStartPre=/usr/bin/docker pull quay.io/forty9ten/demo-app
+ExecStart=/usr/bin/bash -c "/usr/bin/docker run --name %p-%i -p %i:4567 \
+quay.io/forty9ten/demo-app
+ExecStartPost=/usr/bin/etcdctl set /app/demo-app/%p-%i ${COREOS_PUBLIC_IPV4}:%i
+ExecStop=/usr/bin/docker stop %p-%i
+ExecStopPost=/usr/bin/etcdctl rm /app/demo-app/%p-%i
+TimeoutSec=15min
+Restart=on-failure
+RestartSec=15s
+
+[X-Fleet]
+Conflicts=*@%i.service
